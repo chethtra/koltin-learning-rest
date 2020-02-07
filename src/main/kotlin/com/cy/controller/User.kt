@@ -1,22 +1,29 @@
 package com.cy.controller;
 
-import org.springframework.web.bind.annotation.*;
+import com.cy.repo.UserRepo;
+import com.cy.model.Users;
 
+import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired
 
 @RestController
 @RequestMapping("/user")
 class UserController{
+
+    @Autowired
+    lateinit var repo: UserRepo;
+
     @RequestMapping(method = [RequestMethod.POST])
     @ResponseBody
     fun createUser() : String{
-        return "User created";
+        repo.save(Users("Bod", "Lee", 4, "mail@mail.com"));
+
+        return "User saved";
     }
 
     @RequestMapping(value = ["/{id}"], method = [RequestMethod.GET])
     @ResponseBody
-    fun getUserById(@PathVariable id : Int) :String{
-        return "Here is user ${id}"
-    }
+    fun getUserById(@PathVariable id : Long) = repo.findById(id);
 
 
     @RequestMapping(value = ["/"], method = [RequestMethod.GET])
