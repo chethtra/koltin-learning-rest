@@ -4,7 +4,12 @@ import com.cy.repo.UserRepo;
 import com.cy.model.Users;
 
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.validation.Valid;
+
+
+val UserMissingException = IllegalArgumentException("User is missing");
 
 @RestController
 @RequestMapping("/user")
@@ -13,29 +18,36 @@ class UserController{
     @Autowired
     lateinit var repo: UserRepo;
 
-    @RequestMapping(method = [RequestMethod.POST])
+    @PostMapping("/")
     @ResponseBody
-    fun createUser() : String{
-        repo.save(Users("Bod", "Lee", 4, "mail@mail.com"));
-
-        return "User saved";
+    fun createUser( @RequestBody @Valid newUser: Users) : Users{
+        return repo.save(newUser);
     }
 
-    @RequestMapping(value = ["/{id}"], method = [RequestMethod.GET])
+    @GetMapping("/{id}")
     @ResponseBody
-    fun getUserById(@PathVariable id : Long) = repo.findById(id);
-
-
-    @RequestMapping(value = ["/"], method = [RequestMethod.GET])
-    @ResponseBody
-    fun getUsers(): String{
-        return "Here all the users";
+    fun getUserById(@PathVariable id : Long): Users {
+        return repo.findById(id)
+        .orElseThrow({UserMissingException});
     }
 
-    @RequestMapping(value=["/{id}"], method = [RequestMethod.PATCH])
+    @GetMapping("/")
     @ResponseBody
-    fun updateUser(@PathVariable id: Int): String{
-        return "Updated user ${id}";
+    fun getUsers(): Iterable<Users>{
+        return repo.findAll();
     }
 
+    @PutMapping("/{id}")
+    @ResponseBody
+    fun updateUser(@PathVariable id: Long, @Valid @RequestBody updateBody: Users): Users{
+        val (firstName, lastName, age, email) = updateBody; 
+        return repo.findById(id).map({ 
+            it.firstName = if(firstName.length == 0) it.firstName else firstName;
+            it.lastName = if(lastName.length == 0) it.lastName else lastName;
+            it.email = if(email.length == 0) it.email else email;
+            it.age = if(age == -1) it.age else age;
+            repo.save(it)
+        })
+        .orElseThrow({UserMissingException})
+    }
 }
